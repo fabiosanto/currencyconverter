@@ -1,6 +1,7 @@
 <resources>
-    <string name="app_name">CurrencyConverter</string>
-
+    <string name="app_name">Cash Money</string>
     <string name="hello_world">Hello world!</string>
     <string name="action_settings">Settings</string>
+    <string name="AUD_label">AUD</string>
+
 </resources>

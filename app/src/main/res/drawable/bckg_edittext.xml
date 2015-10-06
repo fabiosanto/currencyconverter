@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<layer-list xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <item android:bottom="1.5dp"
+    android:left="1.5dp"
+    android:right="1.5dp">
+    <shape >
+    <bitmap xmlns:android="http://schemas.android.com/apk/res/android"
+        android:src="@drawable/edittext_bckg"
+        android:tileModeX="mirror"
+        android:tileModeY="disabled"
+
+        android:antialias="true"
+        android:dither="false"
+        android:filter="false"
+        android:gravity="bottom">
+
+    </bitmap>
+    </shape>
+    </item>
+</layer-list>
