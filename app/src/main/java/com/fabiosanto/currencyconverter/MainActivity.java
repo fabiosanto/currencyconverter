@@ -1,5 +1,6 @@
 package com.fabiosanto.currencyconverter;
 
+import android.app.ProgressDialog;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.support.v4.view.PagerAdapter;
@@ -7,7 +8,6 @@ import android.support.v4.view.ViewPager;
 import android.support.v7.app.AppCompatActivity;
 import android.text.Editable;
 import android.text.TextWatcher;
-import android.util.Log;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.EditText;
@@ -26,12 +26,14 @@ import java.text.NumberFormat;
 import java.util.Locale;
 
 public class MainActivity extends AppCompatActivity {
-
-
+    private final String stringUrl = "http://api.fixer.io/latest?base=AUD&symbols=CAD,EUR,JPY,USD,GBP";
     private String[] currencies = new String[]{null,"CAD", "EUR", "GBP", "JPY", "USD",null};
+    private Locale[] locales = new Locale[]{null, Locale.CANADA, Locale.ITALY, Locale.UK, Locale.JAPAN, Locale.US,null};
 
     JSONObject wsResult = null;
-
+    NumberFormat formatInput = NumberFormat.getCurrencyInstance();
+    NumberFormat formatResult = NumberFormat.getCurrencyInstance(Locale.UK);
+    NumberFormat formatNumber = NumberFormat.getNumberInstance();
     private ViewPager mViewPager;
 
     int currentItem = 2;
@@ -52,7 +54,8 @@ public class MainActivity extends AppCompatActivity {
         valueTx.addTextChangedListener(txw);
         resultTx = (TextView) findViewById(R.id.result);
 
-
+        //start rerieving data from ws
+        new GetData().execute();
     }
 
     //listener for input editext changes
@@ -80,12 +83,25 @@ public class MainActivity extends AppCompatActivity {
             JSONObject joRates = wsResult.getJSONObject("rates");
 
             double rate = joRates.getDouble(currency);
-            double value = Double.parseDouble(valueTx.getText().toString());
+//            Number number = formatNumber.parse();
+            double value = formatInput.parse(valueTx.getText().toString()).doubleValue();
             double converted = rate * value;
 
-            resultTx.setText(String.valueOf(converted));
+            resultTx.setText(formatResult.format(converted));
 
         } catch (Exception e) {
+            tryRecoverData();
+            e.printStackTrace();
+        }
+    }
+
+    private void tryRecoverData() {
+        try {
+            Number number = formatNumber.parse(valueTx.getText().toString());
+            valueTx.setText(formatInput.format(number.doubleValue()));
+
+        }catch (Exception e){
+            valueTx.setText("0.00");
             e.printStackTrace();
         }
     }
@@ -100,8 +116,14 @@ public class MainActivity extends AppCompatActivity {
         @Override
         public void onPageSelected(int position) {
             currentItem = position+1;
-            refreshColors(currentItem);
-            calculate();
+
+            if(currencies[currentItem]!=null){
+                formatResult = NumberFormat.getCurrencyInstance(locales[currentItem]);
+
+                refreshColors(currentItem);
+                calculate();
+            }
+
         }
 
         @Override
@@ -178,4 +200,79 @@ public class MainActivity extends AppCompatActivity {
     }
 
 
+
+    //asynctask to retrieve data from ws
+    private class GetData extends AsyncTask<Void,Void,JSONObject>{
+        ProgressDialog progressDialog;
+        @Override
+        protected void onPreExecute() {
+            progressDialog = ProgressDialog.show(MainActivity.this,null,"Checking rates...");
+            progressDialog.setCancelable(false);
+            progressDialog.show();
+            super.onPreExecute();
+        }
+
+        @Override
+        protected JSONObject doInBackground(Void... params) {
+                try{
+                    String response = getData();
+                    JSONObject wsResult = new JSONObject(response);
+
+                    return wsResult;
+                }catch (Exception e){
+                    return null;
+                }
+        }
+
+        @Override
+        protected void onPostExecute(JSONObject result) {
+            progressDialog.dismiss();
+            if (result!=null){
+
+                wsResult = result;
+                valueTx.setText(formatInput.format(100.00));
+                mViewPager.setCurrentItem(currentItem);
+
+            }else {
+                //show error
+                Toast.makeText(MainActivity.this,"Ops an error occured",Toast.LENGTH_SHORT).show();
+            }
+        }
+
+        private String getData() throws IOException {
+            InputStream inputStream = null;
+
+            try {
+                URL url = new URL(stringUrl);
+                HttpURLConnection conn = (HttpURLConnection) url.openConnection();
+
+                // Starts the query
+                conn.connect();
+
+                int response = conn.getResponseCode();
+                inputStream = conn.getInputStream();
+
+                // Convert the inputStream into a string
+                String contentAsString = getResponse(inputStream);
+                return contentAsString;
+
+                //Close the inputStream at the end
+            } finally {
+                if (inputStream != null) {
+                    inputStream.close();
+                }
+            }
+        }
+
+        private String getResponse(InputStream inputStream) throws IOException {
+            BufferedReader r = new BufferedReader(new InputStreamReader(inputStream));
+            StringBuilder total = new StringBuilder();
+            String line;
+            while ((line = r.readLine()) != null) {
+                total.append(line);
+            }
+
+            return total.toString();
+        }
+    }
 }
