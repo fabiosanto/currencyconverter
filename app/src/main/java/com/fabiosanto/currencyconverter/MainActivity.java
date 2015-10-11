@@ -1,10 +1,12 @@
 package com.fabiosanto.currencyconverter;
 
 import android.app.ProgressDialog;
+import android.content.DialogInterface;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.support.v4.view.PagerAdapter;
 import android.support.v4.view.ViewPager;
+import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
 import android.text.Editable;
 import android.text.TextWatcher;
@@ -12,7 +14,6 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.EditText;
 import android.widget.TextView;
-import android.widget.Toast;
 
 import org.json.JSONObject;
 
@@ -27,6 +28,8 @@ import java.util.Locale;
 
 public class MainActivity extends AppCompatActivity {
     private final String stringUrl = "http://api.fixer.io/latest?base=AUD&symbols=CAD,EUR,JPY,USD,GBP";
+    private final double defaultValueStart = 100.00;
+
     private String[] currencies = new String[]{null,"CAD", "EUR", "GBP", "JPY", "USD",null};
     private Locale[] locales = new Locale[]{null, Locale.CANADA, Locale.ITALY, Locale.UK, Locale.JAPAN, Locale.US,null};
 
@@ -39,6 +42,7 @@ public class MainActivity extends AppCompatActivity {
     int currentItem = 2;
     private TextView resultTx;
     private EditText valueTx;
+    private double defaultValue;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -230,12 +234,24 @@ public class MainActivity extends AppCompatActivity {
             if (result!=null){
 
                 wsResult = result;
-                valueTx.setText(formatInput.format(100.00));
+                defaultValue = defaultValueStart;
+                valueTx.setText(formatInput.format(defaultValue));
                 mViewPager.setCurrentItem(currentItem);
 
             }else {
                 //show error
-                Toast.makeText(MainActivity.this,"Ops an error occured",Toast.LENGTH_SHORT).show();
+                AlertDialog.Builder adb = new AlertDialog.Builder(MainActivity.this)
+                        .setTitle("Sorry")
+                        .setMessage("Not able to get current rates")
+                        .setCancelable(false)
+                        .setPositiveButton("Okay", new DialogInterface.OnClickListener() {
+                            @Override
+                            public void onClick(DialogInterface dialog, int which) {
+                                finish();
+                            }
+                        });
+                adb.create();
+                adb.show();
             }
         }
 
